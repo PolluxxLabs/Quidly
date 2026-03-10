@@ -1,7 +1,7 @@
 import { getStoredSession } from './auth';
 
 export function getApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
+  return '/api-proxy';
 }
 
 export async function apiRequest<T>(
