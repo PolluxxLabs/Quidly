@@ -1,0 +1,20 @@
+{
+  "name": "Quidly",
+  "version": "1.0.0",
+  "description": "Quidly monorepo",
+  "scripts": {
+    "build": "pnpm --filter api build && pnpm --filter dashboard build && pnpm --filter docs build",
+    "dev:api": "pnpm --filter api start:dev",
+    "dev:dashboard": "pnpm --filter dashboard dev",
+    "dev:docs": "pnpm --filter docs dev",
+    "docker:down": "docker compose down",
+    "docker:up": "docker compose up --build",
+    "lint": "pnpm --filter api lint && pnpm --filter dashboard lint && pnpm --filter docs lint",
+    "smoke:local": "node scripts/smoke-local.mjs",
+    "seed:api": "pnpm --filter api seed:dev-merchant",
+    "test": "pnpm --filter api test && pnpm --filter dashboard test && pnpm --filter docs test",
+    "test:e2e": "pnpm --filter api test:e2e"
+  },
+  "license": "ISC",
+  "packageManager": "pnpm@10.31.0"
+}

@@ -1,0 +1,79 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: quidly
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d quidly"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/quidly?schema=public
+      JWT_SECRET: ci-jwt-secret
+      WEBHOOK_SECRET_ENCRYPTION_KEY: ci-webhook-secret
+      CORS_ORIGINS: http://localhost:3001,http://localhost:3002
+      DISABLE_QUEUES: "true"
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      BASE_NETWORK: sepolia
+      BASE_RPC_URL: http://127.0.0.1:8545
+      CRYPTO_WALLET_SEED: quidly-ci-wallet-seed
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.31.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter api exec prisma generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Unit and app tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: API e2e
+        run: pnpm --filter api test:e2e

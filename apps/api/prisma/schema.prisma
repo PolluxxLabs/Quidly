@@ -1,0 +1,291 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+ }
+
+enum MerchantStatus {
+  ACTIVE
+  DISABLED
+  PENDING
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum PaymentMethod {
+  CRYPTO
+  MPESA
+}
+
+enum PaymentStatus {
+  PENDING
+  AWAITING_PAYMENT
+  AWAITING_CUSTOMER_ACTION
+  CONFIRMING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+  CANCELLED
+  REFUNDED
+  REVERSED
+}
+
+enum AttemptStatus {
+  PENDING
+  SENT
+  SUCCEEDED
+  FAILED
+}
+
+enum ProviderName {
+  CRYPTO
+  MPESA
+}
+
+enum CryptoAsset {
+  USDC
+}
+
+enum CryptoChain {
+  BASE
+}
+
+enum CryptoInvoiceStatus {
+  PENDING
+  AWAITING_PAYMENT
+  DETECTED
+  CONFIRMING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+}
+
+enum CryptoTxStatus {
+  DETECTED
+  CONFIRMING
+  CONFIRMED
+  FAILED
+}
+
+enum LedgerDirection {
+  DEBIT
+  CREDIT
+}
+
+enum LedgerEntryType {
+  PAYMENT_INFLOW
+  MERCHANT_PAYABLE
+  PLATFORM_FEE
+  REFUND
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+}
+
+enum MerchantEnvironment {
+  SANDBOX
+  LIVE
+}
+
+model Merchant {
+  id             String             @id @default(cuid())
+  name           String
+  email          String             @unique
+  passwordHash   String
+  webhookUrl     String?
+  webhookSecret  String?
+  webhookSecretEncrypted String?
+  webhookSecretHash String?
+  defaultEnvironment MerchantEnvironment @default(SANDBOX)
+  webhookUrlUpdatedAt DateTime?
+  webhookSecretUpdatedAt DateTime?
+  status         MerchantStatus     @default(PENDING)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  apiKeys        MerchantApiKey[]
+  paymentIntents PaymentIntent[]
+  ledgerEntries  LedgerEntry[]
+  webhooks       WebhookDelivery[]
+}
+
+model MerchantApiKey {
+  id          String        @id @default(cuid())
+  merchantId  String
+  name        String
+  keyPrefix   String
+  keyHash     String
+  lastUsedAt  DateTime?
+  status      ApiKeyStatus  @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  merchant    Merchant      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([keyPrefix])
+}
+
+model PaymentIntent {
+  id               String           @id @default(cuid())
+  merchantId       String
+  amount           Decimal          @db.Decimal(18, 6)
+  currency         String
+  method           PaymentMethod
+  reference        String?
+  idempotencyKey   String?
+  status           PaymentStatus    @default(PENDING)
+  provider         ProviderName
+  providerRef      String?
+  customerEmail    String?
+  customerPhone    String?
+  description      String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  merchant         Merchant         @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  attempts         PaymentAttempt[]
+  cryptoInvoice    CryptoInvoice?
+  providerEvents   ProviderEvent[]
+  ledgerEntries    LedgerEntry[]
+  webhookLogs      WebhookDelivery[]
+
+  @@index([merchantId])
+  @@index([status])
+  @@index([provider])
+  @@index([reference])
+  @@unique([merchantId, idempotencyKey])
+}
+
+model PaymentAttempt {
+  id               String         @id @default(cuid())
+  paymentIntentId  String
+  provider         ProviderName
+  attemptNumber    Int
+  status           AttemptStatus  @default(PENDING)
+  requestPayload   Json?
+  responsePayload  Json?
+  errorMessage     String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  paymentIntent    PaymentIntent  @relation(fields: [paymentIntentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentIntentId])
+  @@unique([paymentIntentId, attemptNumber])
+}
+
+model CryptoInvoice {
+  id                String               @id @default(cuid())
+  paymentIntentId   String               @unique
+  asset             CryptoAsset
+  chain             CryptoChain
+  address           String
+  expectedAmount    Decimal              @db.Decimal(18, 6)
+  expectedAmountRaw String?
+  status            CryptoInvoiceStatus  @default(PENDING)
+  expiresAt         DateTime
+  paidAt            DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  paymentIntent     PaymentIntent        @relation(fields: [paymentIntentId], references: [id], onDelete: Cascade)
+  transactions      CryptoTransaction[]
+
+  @@index([address])
+  @@index([status])
+}
+
+model CryptoTransaction {
+  id                String            @id @default(cuid())
+  cryptoInvoiceId   String
+  txHash            String            @unique
+  fromAddress       String?
+  toAddress         String
+  asset             CryptoAsset
+  chain             CryptoChain
+  amount            Decimal           @db.Decimal(18, 6)
+  amountRaw         String?
+  blockNumber       BigInt?
+  confirmations     Int               @default(0)
+  status            CryptoTxStatus    @default(DETECTED)
+  detectedAt        DateTime          @default(now())
+  confirmedAt       DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  cryptoInvoice     CryptoInvoice     @relation(fields: [cryptoInvoiceId], references: [id], onDelete: Cascade)
+
+  @@index([cryptoInvoiceId])
+  @@index([status])
+}
+
+model ProviderEvent {
+  id               String         @id @default(cuid())
+  paymentIntentId  String?
+  provider         ProviderName
+  eventType        String
+  externalEventId  String?
+  payload          Json
+  processed        Boolean        @default(false)
+  processedAt      DateTime?
+  createdAt        DateTime       @default(now())
+
+  paymentIntent    PaymentIntent? @relation(fields: [paymentIntentId], references: [id], onDelete: SetNull)
+
+  @@index([paymentIntentId])
+  @@index([provider, eventType])
+  @@unique([provider, externalEventId])
+}
+
+model LedgerEntry {
+  id               String            @id @default(cuid())
+  merchantId       String
+  paymentIntentId  String?
+  entryType        LedgerEntryType
+  direction        LedgerDirection
+  currency         String
+  amount           Decimal           @db.Decimal(18, 6)
+  description      String?
+  createdAt        DateTime          @default(now())
+
+  merchant         Merchant          @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  paymentIntent    PaymentIntent?    @relation(fields: [paymentIntentId], references: [id], onDelete: SetNull)
+
+  @@index([merchantId])
+  @@index([paymentIntentId])
+  @@index([entryType])
+}
+
+model WebhookDelivery {
+  id               String                 @id @default(cuid())
+  merchantId       String
+  paymentIntentId  String?
+  eventType        String
+  targetUrl        String
+  payload          Json
+  responseCode     Int?
+  responseBody     String?
+  attemptCount     Int                    @default(0)
+  nextRetryAt      DateTime?
+  deliveredAt      DateTime?
+  status           WebhookDeliveryStatus  @default(PENDING)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  merchant         Merchant               @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  paymentIntent    PaymentIntent?         @relation(fields: [paymentIntentId], references: [id], onDelete: SetNull)
+
+  @@index([merchantId])
+  @@index([paymentIntentId])
+  @@index([status])
+  @@index([nextRetryAt])
+}

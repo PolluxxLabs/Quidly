@@ -1,0 +1,242 @@
+:root {
+  --bg: #f4efe6;
+  --bg-strong: #fff8ef;
+  --surface: rgba(255, 248, 239, 0.82);
+  --surface-strong: #fffdf8;
+  --ink: #1d241f;
+  --muted: #596861;
+  --line: rgba(29, 36, 31, 0.12);
+  --accent: #0f7b6c;
+  --accent-soft: rgba(15, 123, 108, 0.14);
+  --warning: #9f4f1e;
+  --code-bg: #151d1a;
+  --code-ink: #f6f1e9;
+  --shadow: 0 24px 80px rgba(29, 36, 31, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top left, rgba(15, 123, 108, 0.16), transparent 34%),
+    radial-gradient(circle at top right, rgba(197, 126, 45, 0.14), transparent 28%),
+    linear-gradient(180deg, var(--bg) 0%, #efe6d8 100%);
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+code,
+pre {
+  font-family: "Courier New", Courier, monospace;
+}
+
+.docs-shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 32px 24px;
+  border-right: 1px solid var(--line);
+  background: rgba(255, 248, 239, 0.88);
+  backdrop-filter: blur(14px);
+}
+
+.brand {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 28px;
+}
+
+.brand strong,
+.page-head h1,
+.hero-card h2,
+.section-card h2,
+.section-card h3 {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -0.02em;
+}
+
+.eyebrow,
+.muted {
+  color: var(--muted);
+}
+
+.eyebrow {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.nav {
+  display: grid;
+  gap: 8px;
+}
+
+.nav a {
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  color: var(--muted);
+}
+
+.nav a[data-active="true"] {
+  color: var(--ink);
+  background: var(--accent-soft);
+  border-color: rgba(15, 123, 108, 0.22);
+}
+
+.main {
+  padding: 36px;
+}
+
+.page-head {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.page-head h1 {
+  margin: 0;
+  font-size: clamp(2.5rem, 4vw, 4rem);
+}
+
+.page-head p {
+  margin: 0;
+  max-width: 760px;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.hero-grid,
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.hero-card,
+.section-card,
+.code-block {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+}
+
+.hero-card,
+.section-card {
+  padding: 22px;
+}
+
+.hero-card h2,
+.section-card h2,
+.section-card h3 {
+  margin: 0 0 12px;
+}
+
+.section-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.section-card p,
+.section-card li,
+.hero-card p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.section-card ul,
+.section-card ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tag {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(197, 126, 45, 0.12);
+  border: 1px solid rgba(197, 126, 45, 0.18);
+  color: #6a4a2a;
+  font-size: 0.9rem;
+}
+
+.code-block {
+  overflow: hidden;
+}
+
+.code-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(246, 241, 233, 0.72);
+  background: var(--code-bg);
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 18px;
+  overflow-x: auto;
+  background: var(--code-bg);
+  color: var(--code-ink);
+  line-height: 1.65;
+}
+
+.callout {
+  padding: 16px 18px;
+  border-left: 4px solid var(--warning);
+  border-radius: 18px;
+  background: rgba(159, 79, 30, 0.08);
+  color: #7f4118;
+}
+
+.footer-note {
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 920px) {
+  .docs-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .main {
+    padding: 24px;
+  }
+}

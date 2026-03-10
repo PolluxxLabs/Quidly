@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: quidly
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/quidly?schema=public
+      JWT_SECRET: change-me
+      WEBHOOK_SECRET_ENCRYPTION_KEY: change-me
+      CORS_ORIGINS: http://localhost:3001,http://localhost:3002
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      BASE_NETWORK: sepolia
+      BASE_RPC_URL: https://sepolia.base.org
+      CRYPTO_WALLET_SEED: quidly-dev-wallet-seed
+    command: >
+      sh -c "pnpm --filter api exec prisma migrate deploy &&
+      pnpm --filter api start:prod"
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+  redis_data:
