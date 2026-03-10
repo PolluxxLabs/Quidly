@@ -43,35 +43,72 @@ export default function TransactionDetailsPage() {
       title="Payment details"
       description="Trace invoice state, transfer confirmations, and on-chain destination data."
     >
-      <section className="grid-two">
+      <div className="grid-two">
         <article className="panel">
-          <h2>Intent</h2>
-          <p>ID: {payment?.id ?? '—'}</p>
-          <p>Reference: {payment?.reference ?? '—'}</p>
-          <p>Description: {payment?.description ?? '—'}</p>
-          <p>
-            Amount:{' '}
-            {payment
-              ? formatCurrency(payment.amount, payment.currency)
-              : '—'}
-          </p>
-          <p>Created: {formatDate(payment?.createdAt)}</p>
-          {payment ? <StatusBadge status={payment.status} /> : null}
+          <div className="panel-header">
+            <h2>Payment intent</h2>
+            {payment && <StatusBadge status={payment.status} />}
+          </div>
+          <div className="info-grid">
+            <div className="info-row">
+              <span className="info-label">ID</span>
+              <span className="info-value mono">{payment?.id ?? '—'}</span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Amount</span>
+              <span className="info-value">
+                {payment ? formatCurrency(payment.amount, payment.currency) : '—'}
+              </span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Reference</span>
+              <span className="info-value">{payment?.reference ?? '—'}</span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Description</span>
+              <span className="info-value">{payment?.description ?? '—'}</span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Created</span>
+              <span className="info-value">{formatDate(payment?.createdAt)}</span>
+            </div>
+          </div>
         </article>
 
         <article className="panel">
-          <h2>Crypto invoice</h2>
-          <p>Address: {payment?.cryptoInvoice?.address ?? '—'}</p>
-          <p>Expected amount: {payment?.cryptoInvoice?.expectedAmount ?? '—'}</p>
-          <p>Expires: {formatDate(payment?.cryptoInvoice?.expiresAt)}</p>
-          {payment?.cryptoInvoice ? (
-            <StatusBadge status={payment.cryptoInvoice.status} />
-          ) : null}
+          <div className="panel-header">
+            <h2>Crypto invoice</h2>
+            {payment?.cryptoInvoice && (
+              <StatusBadge status={payment.cryptoInvoice.status} />
+            )}
+          </div>
+          <div className="info-grid">
+            <div className="info-row">
+              <span className="info-label">Address</span>
+              <span className="info-value mono">
+                {payment?.cryptoInvoice?.address ?? '—'}
+              </span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Expected</span>
+              <span className="info-value">
+                {payment?.cryptoInvoice?.expectedAmount ?? '—'}
+              </span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Expires</span>
+              <span className="info-value">
+                {formatDate(payment?.cryptoInvoice?.expiresAt)}
+              </span>
+            </div>
+          </div>
         </article>
-      </section>
+      </div>
 
       <section className="panel">
-        <h2>Observed transfers</h2>
+        <div className="panel-header">
+          <h2>Observed transfers</h2>
+        </div>
         <div className="table-wrap">
           <table>
             <thead>
@@ -82,15 +119,21 @@ export default function TransactionDetailsPage() {
               </tr>
             </thead>
             <tbody>
-              {payment?.cryptoInvoice?.transactions.map((transaction) => (
-                <tr key={transaction.txHash}>
-                  <td>{transaction.txHash}</td>
-                  <td>
-                    <StatusBadge status={transaction.status} />
+              {payment?.cryptoInvoice?.transactions.length ? (
+                payment.cryptoInvoice.transactions.map((tx) => (
+                  <tr key={tx.txHash}>
+                    <td className="mono">{tx.txHash}</td>
+                    <td><StatusBadge status={tx.status} /></td>
+                    <td>{tx.confirmations}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3}>
+                    <div className="empty-state">No transfers observed yet</div>
                   </td>
-                  <td>{transaction.confirmations}</td>
                 </tr>
-              )) ?? null}
+              )}
             </tbody>
           </table>
         </div>

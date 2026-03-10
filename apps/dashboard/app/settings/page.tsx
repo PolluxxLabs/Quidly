@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const [webhookUrl, setWebhookUrl] = useState('');
   const [defaultEnvironment, setDefaultEnvironment] = useState('SANDBOX');
   const [rotatedSecret, setRotatedSecret] = useState('');
+  const [saved, setSaved] = useState(false);
 
   async function load() {
     const response = await apiRequest<SettingsResponse>('/merchant/settings');
@@ -36,15 +37,15 @@ export default function SettingsPage() {
       method: 'PATCH',
       body: JSON.stringify({ webhookUrl, defaultEnvironment }),
     });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
     await load();
   }
 
   async function handleRotate() {
     const response = await apiRequest<{ webhookSecret: string }>(
       '/merchant/settings/rotate-webhook-secret',
-      {
-        method: 'POST',
-      },
+      { method: 'POST' },
     );
     setRotatedSecret(response.webhookSecret);
     await load();
@@ -55,13 +56,17 @@ export default function SettingsPage() {
       title="Settings"
       description="Manage webhook delivery targets, rotate signing secrets, and set your default merchant environment."
     >
-      <section className="grid-two">
+      <div className="grid-two">
         <form className="panel" onSubmit={handleSave}>
-          <h2>Merchant settings</h2>
+          <div className="panel-header">
+            <h2>Merchant settings</h2>
+          </div>
+
           <label className="field">
             <span>Webhook URL</span>
             <input
-              onChange={(event) => setWebhookUrl(event.target.value)}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              placeholder="https://your-site.com/webhooks/quidly"
               value={webhookUrl}
             />
           </label>
@@ -69,13 +74,15 @@ export default function SettingsPage() {
           <label className="field">
             <span>Default environment</span>
             <select
-              onChange={(event) => setDefaultEnvironment(event.target.value)}
+              onChange={(e) => setDefaultEnvironment(e.target.value)}
               value={defaultEnvironment}
             >
-              <option value="SANDBOX">SANDBOX</option>
-              <option value="LIVE">LIVE</option>
+              <option value="SANDBOX">Sandbox</option>
+              <option value="LIVE">Live</option>
             </select>
           </label>
+
+          {saved && <div className="success-msg">Settings saved successfully.</div>}
 
           <button className="button" type="submit">
             Save settings
@@ -83,24 +90,53 @@ export default function SettingsPage() {
         </form>
 
         <section className="panel">
-          <h2>Webhook signing</h2>
-          <p>Current secret preview: {settings?.webhookSecretPreview ?? '—'}</p>
-          <p>Webhook URL updated: {formatDate(settings?.webhookUrlUpdatedAt)}</p>
-          <p>
-            Secret rotated: {formatDate(settings?.webhookSecretUpdatedAt)}
-          </p>
-          <button className="button" onClick={handleRotate} type="button">
+          <div className="panel-header">
+            <h2>Webhook signing</h2>
+          </div>
+
+          <div className="info-grid" style={{ marginBottom: 20 }}>
+            <div className="info-row">
+              <span className="info-label">Secret preview</span>
+              <span className="info-value mono">
+                {settings?.webhookSecretPreview ?? '—'}
+              </span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">URL updated</span>
+              <span className="info-value">
+                {formatDate(settings?.webhookUrlUpdatedAt)}
+              </span>
+            </div>
+            <div className="info-row">
+              <span className="info-label">Secret rotated</span>
+              <span className="info-value">
+                {formatDate(settings?.webhookSecretUpdatedAt)}
+              </span>
+            </div>
+          </div>
+
+          <button className="button-ghost" onClick={handleRotate} type="button">
             Rotate webhook secret
           </button>
 
-          {rotatedSecret ? (
-            <>
-              <p className="muted">Copy the new secret now. It is shown once.</p>
+          {rotatedSecret && (
+            <div style={{ marginTop: 16 }}>
+              <p className="muted" style={{ fontSize: 13, marginBottom: 8 }}>
+                Copy this now — it will not be shown again.
+              </p>
               <div className="code">{rotatedSecret}</div>
-            </>
-          ) : null}
+              <button
+                className="button-ghost"
+                onClick={() => navigator.clipboard.writeText(rotatedSecret)}
+                style={{ marginTop: 10 }}
+                type="button"
+              >
+                Copy secret
+              </button>
+            </div>
+          )}
         </section>
-      </section>
+      </div>
     </DashboardShell>
   );
 }

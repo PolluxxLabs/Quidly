@@ -22,12 +22,7 @@ export default function RegisterPage() {
     try {
       const session = await apiRequest<{
         accessToken: string;
-        merchant: {
-          id: string;
-          name: string;
-          email: string;
-          status: string;
-        };
+        merchant: { id: string; name: string; email: string; status: string };
       }>('/auth/register', {
         method: 'POST',
         body: JSON.stringify({ name, email, password }),
@@ -49,25 +44,30 @@ export default function RegisterPage() {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <h1>Create merchant account</h1>
-        <p className="muted">
-          Start with Base USDC and expand later without changing your core
-          integration.
-        </p>
+        <div className="auth-brand">
+          <div className="auth-brand-icon">Q</div>
+          <span className="auth-brand-name">Quidly</span>
+        </div>
+
+        <h1>Create your account</h1>
+        <p>Start accepting Base USDC payments in minutes.</p>
 
         <label className="field">
           <span>Business name</span>
           <input
-            onChange={(event) => setName(event.target.value)}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Acme Ltd."
             required
             value={name}
           />
         </label>
 
         <label className="field">
-          <span>Email</span>
+          <span>Email address</span>
           <input
-            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@company.com"
             required
             type="email"
             value={email}
@@ -77,23 +77,25 @@ export default function RegisterPage() {
         <label className="field">
           <span>Password</span>
           <input
-            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="new-password"
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Choose a strong password"
             required
             type="password"
             value={password}
           />
         </label>
 
-        {error ? <p className="muted">{error}</p> : null}
+        {error && <div className="error-msg">{error}</div>}
 
-        <div className="row">
-          <button className="button" disabled={pending} type="submit">
-            {pending ? 'Creating…' : 'Register'}
-          </button>
-          <Link className="button-ghost" href="/login">
-            Back to sign-in
-          </Link>
-        </div>
+        <button className="button" disabled={pending} type="submit" style={{ width: '100%', marginTop: 4 }}>
+          {pending ? 'Creating account…' : 'Create account'}
+        </button>
+
+        <p className="auth-divider">
+          Already have an account?{' '}
+          <Link href="/login">Sign in</Link>
+        </p>
       </form>
     </div>
   );

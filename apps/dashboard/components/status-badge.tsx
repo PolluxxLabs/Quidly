@@ -1,3 +1,4 @@
 export function StatusBadge({ status }: { status: string }) {
-  return <span className={`status ${status.toLowerCase()}`}>{status}</span>;
+  const label = status.replace(/_/g, ' ').toLowerCase();
+  return <span className={`status ${status.toLowerCase()}`}>{label}</span>;
 }

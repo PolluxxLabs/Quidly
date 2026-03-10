@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { DashboardShell } from '../../components/dashboard-shell';
+import { StatusBadge } from '../../components/status-badge';
 import { apiRequest } from '../../lib/api';
 import { formatDate } from '../../lib/format';
 
@@ -47,36 +48,50 @@ export default function ApiKeysPage() {
   return (
     <DashboardShell
       title="API keys"
-      description="Create server-side merchant credentials and copy them once at issuance."
+      description="Create server-side merchant credentials. Copy the key immediately — it is only shown once."
     >
-      <section className="grid-two">
+      <div className="grid-two">
         <form className="panel" onSubmit={handleCreate}>
-          <h2>Create key</h2>
+          <div className="panel-header">
+            <h2>Create new key</h2>
+          </div>
+
           <label className="field">
             <span>Key name</span>
-            <input onChange={(event) => setName(event.target.value)} value={name} />
+            <input
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Production server"
+              required
+              value={name}
+            />
           </label>
+
           <button className="button" type="submit">
             Generate key
           </button>
 
-          {newKey ? (
-            <>
-              <p className="muted">Copy this now. It is only shown once.</p>
+          {newKey && (
+            <div style={{ marginTop: 16 }}>
+              <div className="success-msg" style={{ marginBottom: 10 }}>
+                Key created — copy it now. It will not be shown again.
+              </div>
               <div className="code">{newKey}</div>
               <button
                 className="button-ghost"
                 onClick={() => navigator.clipboard.writeText(newKey)}
+                style={{ marginTop: 10 }}
                 type="button"
               >
-                Copy API key
+                Copy key
               </button>
-            </>
-          ) : null}
+            </div>
+          )}
         </form>
 
         <section className="panel">
-          <h2>Existing keys</h2>
+          <div className="panel-header">
+            <h2>Existing keys</h2>
+          </div>
           <div className="table-wrap">
             <table>
               <thead>
@@ -89,28 +104,38 @@ export default function ApiKeysPage() {
                 </tr>
               </thead>
               <tbody>
-                {keys.map((key) => (
-                  <tr key={key.id}>
-                    <td>{key.name}</td>
-                    <td>{key.keyPrefix}</td>
-                    <td>{key.status}</td>
-                    <td>{formatDate(key.lastUsedAt)}</td>
-                    <td>
-                      <button
-                        className="button-danger"
-                        onClick={() => handleRevoke(key.id)}
-                        type="button"
-                      >
-                        Revoke
-                      </button>
+                {keys.length ? (
+                  keys.map((key) => (
+                    <tr key={key.id}>
+                      <td>{key.name}</td>
+                      <td className="mono">{key.keyPrefix}</td>
+                      <td><StatusBadge status={key.status} /></td>
+                      <td>{formatDate(key.lastUsedAt)}</td>
+                      <td>
+                        {key.status !== 'REVOKED' && (
+                          <button
+                            className="button-danger"
+                            onClick={() => handleRevoke(key.id)}
+                            type="button"
+                          >
+                            Revoke
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5}>
+                      <div className="empty-state">No API keys yet</div>
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </section>
-      </section>
+      </div>
     </DashboardShell>
   );
 }

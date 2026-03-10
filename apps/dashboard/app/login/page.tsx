@@ -21,12 +21,7 @@ export default function LoginPage() {
     try {
       const session = await apiRequest<{
         accessToken: string;
-        merchant: {
-          id: string;
-          name: string;
-          email: string;
-          status: string;
-        };
+        merchant: { id: string; name: string; email: string; status: string };
       }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
@@ -48,17 +43,20 @@ export default function LoginPage() {
   return (
     <div className="auth-page">
       <form className="auth-card" onSubmit={handleSubmit}>
-        <h1>Merchant sign-in</h1>
-        <p className="muted">
-          Use your Quidly JWT merchant account to manage Base USDC payment
-          flows.
-        </p>
+        <div className="auth-brand">
+          <div className="auth-brand-icon">Q</div>
+          <span className="auth-brand-name">Quidly</span>
+        </div>
+
+        <h1>Welcome back</h1>
+        <p>Sign in to your merchant account to manage your payments.</p>
 
         <label className="field">
-          <span>Email</span>
+          <span>Email address</span>
           <input
             autoComplete="email"
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@company.com"
             required
             type="email"
             value={email}
@@ -69,23 +67,24 @@ export default function LoginPage() {
           <span>Password</span>
           <input
             autoComplete="current-password"
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
             required
             type="password"
             value={password}
           />
         </label>
 
-        {error ? <p className="muted">{error}</p> : null}
+        {error && <div className="error-msg">{error}</div>}
 
-        <div className="row">
-          <button className="button" disabled={pending} type="submit">
-            {pending ? 'Signing in…' : 'Sign in'}
-          </button>
-          <Link className="button-ghost" href="/register">
-            Create account
-          </Link>
-        </div>
+        <button className="button" disabled={pending} type="submit" style={{ width: '100%', marginTop: 4 }}>
+          {pending ? 'Signing in…' : 'Sign in'}
+        </button>
+
+        <p className="auth-divider">
+          No account?{' '}
+          <Link href="/register">Create one free</Link>
+        </p>
       </form>
     </div>
   );

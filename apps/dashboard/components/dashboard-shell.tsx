@@ -6,20 +6,22 @@ import { ReactNode, useEffect, useState } from 'react';
 import { clearStoredSession, getStoredSession, StoredSession } from '../lib/auth';
 
 const links = [
-  { href: '/overview', label: 'Overview' },
-  { href: '/transactions', label: 'Transactions' },
-  { href: '/api-keys', label: 'API Keys' },
-  { href: '/webhook-logs', label: 'Webhook Logs' },
-  { href: '/settings', label: 'Settings' },
+  { href: '/overview', label: 'Overview', icon: '◈' },
+  { href: '/transactions', label: 'Transactions', icon: '↕' },
+  { href: '/api-keys', label: 'API Keys', icon: '⌗' },
+  { href: '/webhook-logs', label: 'Webhook Logs', icon: '⚡' },
+  { href: '/settings', label: 'Settings', icon: '⚙' },
 ];
 
 export function DashboardShell({
   title,
   description,
+  action,
   children,
 }: {
   title: string;
   description: string;
+  action?: ReactNode;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -28,29 +30,35 @@ export function DashboardShell({
 
   useEffect(() => {
     const nextSession = getStoredSession();
-
     if (!nextSession?.accessToken) {
       router.replace('/login');
       return;
     }
-
     setSession(nextSession);
   }, [router]);
 
-  if (!session) {
-    return null;
-  }
+  if (!session) return null;
+
+  const initials = session.merchant.name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   return (
     <div className="shell">
       <aside className="sidebar">
         <div className="brand">
-          <span className="muted">Kenya-first payments infra</span>
-          <strong>Quidly</strong>
-          <span>{session.merchant.name}</span>
+          <div className="brand-logo">
+            <div className="brand-icon">Q</div>
+            <strong>Quidly</strong>
+          </div>
+          <div className="brand-sub">Payments Platform</div>
         </div>
 
         <nav className="nav">
+          <div className="nav-label">Navigation</div>
           {links.map((link) => (
             <Link
               key={link.href}
@@ -59,35 +67,43 @@ export function DashboardShell({
                 pathname === link.href || pathname.startsWith(`${link.href}/`)
               }
             >
+              <span className="nav-icon">{link.icon}</span>
               {link.label}
             </Link>
           ))}
         </nav>
 
-        <button
-          className="button-ghost"
-          onClick={() => {
-            clearStoredSession();
-            router.replace('/login');
-          }}
-          type="button"
-        >
-          Sign out
-        </button>
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <div className="sidebar-avatar">{initials}</div>
+            <div className="sidebar-user-info">
+              <div className="sidebar-user-name">{session.merchant.name}</div>
+              <div className="sidebar-user-email">{session.merchant.email}</div>
+            </div>
+          </div>
+          <button
+            className="signout-btn"
+            onClick={() => {
+              clearStoredSession();
+              router.replace('/login');
+            }}
+            type="button"
+          >
+            <span className="nav-icon">↩</span>
+            Sign out
+          </button>
+        </div>
       </aside>
 
       <main className="main">
-        <section className="hero">
+        <div className="page-header">
           <div>
-            <h1>{title}</h1>
-            <p className="muted">{description}</p>
+            <div className="page-title">{title}</div>
+            <div className="page-desc">{description}</div>
           </div>
-          <div className="panel" style={{ minWidth: 220 }}>
-            <div className="muted">Signed in as</div>
-            <strong>{session.merchant.email}</strong>
-          </div>
-        </section>
-        {children}
+          {action && <div>{action}</div>}
+        </div>
+        <div className="page-body">{children}</div>
       </main>
     </div>
   );
