@@ -205,11 +205,66 @@ export class WebhooksService {
     });
   }
 
-  async markDelivered(
-    deliveryId: string,
-    responseCode: number,
-    responseBody: string,
-  ) {
+  async findAndDeliverPending(limit = 20) {
+    const deliveries = await this.prisma.webhookDelivery.findMany({
+      where: {
+        status: { in: [WebhookDeliveryStatus.PENDING, WebhookDeliveryStatus.FAILED] },
+        nextRetryAt: { lte: new Date() },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: limit,
+    });
+
+    for (const delivery of deliveries) {
+      if (delivery.status === WebhookDeliveryStatus.DELIVERED) continue;
+
+      const payload = delivery.payload as {
+        headers?: Record<string, string>;
+        body: Record<string, unknown>;
+      };
+
+      try {
+        const response = await fetch(delivery.targetUrl, {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            ...(payload.headers ?? {}),
+          },
+          body: JSON.stringify(payload.body),
+          signal: AbortSignal.timeout(10_000),
+        });
+        const responseBody = await response.text();
+
+        if (!response.ok) {
+          const nextAttemptCount = delivery.attemptCount + 1;
+          const nextRetryAt = new Date(
+            Date.now() + this.getRetryDelayMs(nextAttemptCount),
+          );
+          await this.prisma.webhookDelivery.update({
+            where: { id: delivery.id },
+            data: {
+              attemptCount: nextAttemptCount,
+              responseCode: response.status,
+              responseBody,
+              nextRetryAt,
+              status: WebhookDeliveryStatus.FAILED,
+            },
+          });
+        } else {
+          await this.prisma.webhookDelivery.update({
+            where: { id: delivery.id },
+            data: {
+              attemptCount: delivery.attemptCount + 1,
+              responseCode: response.status,
+              responseBody,
+              deliveredAt: new Date(),
+              nextRetryAt: null,
+              status: WebhookDeliveryStatus.DELIVERED,
+            },
+          });
+        }
+      } catch {
+        const
     const delivery = await this.prisma.webhookDelivery.findUnique({
       where: { id: deliveryId },
     });
