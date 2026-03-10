@@ -16,7 +16,7 @@ function getCorsOrigins() {
     return configuredOrigins;
   }
 
-  return ['http://localhost:3001', 'http://localhost:3002'];
+  return ['http://localhost:5000', 'http://localhost:3001', 'http://localhost:3002'];
 }
 
 async function bootstrap() {
